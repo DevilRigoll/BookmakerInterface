@@ -48,3 +48,11 @@ MatchPeriod criterionToMatchPeriod(Criterions crt) {
 
     return p;
 }
+
+Criterions intToCrt(int i) {
+    switch (i) {
+        case 1: return GOAL_FIRTS_TIME;
+        case 2: return GOAL_SECOND_TIME;
+        case 3: return GOAL_IN_3_TIMES;
+    }
+}

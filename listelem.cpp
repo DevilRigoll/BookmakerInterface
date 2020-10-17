@@ -37,6 +37,20 @@ int ListElem::getPercent() const {
     //return percent;
 }
 
+QString ListElem::getCmdName() const {
+    return ui->CmdName->text();
+}
+
+listElemetData ListElem::getData() const {
+    listElemetData led;
+    led.id = index;
+    led.league = ui->League->text();
+    led.country = ui->Country->text();
+    led.command = getCmdName();
+    led.percent = getPercent();
+    return led;
+}
+
 void ListElem::mousePressEvent(QMouseEvent * event) {
     //f(event->button() == Qt::RightButton)
         //emit rightMBClicked(index, ui->CmdName->text(), ui->Liga->text(), ui->Country->text());

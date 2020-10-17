@@ -1,6 +1,7 @@
 #include "configworker.h"
 #include <QString>
 #include <QFile>
+#include <QDateTime>
 #include <QDebug>
 #include <stdio.h>
 #include <iostream>
@@ -8,11 +9,16 @@
 #include "utils.h"
 
 #if _WIN32 || _WIN64
-    //#define _CRT_SECURE_NO_WARNINGS
+    #define _CRT_SECURE_NO_WARNINGS
 #endif
+
 
 ConfigWorker::ConfigWorker() {
     sdb = QSqlDatabase::addDatabase("QSQLITE");
+    QDir dir(ANALIZE_RESULT_DIR);
+    if (!dir.exists()) {
+        dir.mkpath(".");
+    }
 }
 
 ConfigWorker::~ConfigWorker() {}
@@ -111,7 +117,7 @@ void ConfigWorker::initDatabase() {
         for (int i = 0; i < list.size(); ++i) {
             QFileInfo fileInfo = list[i];
 
-            query.prepare(QString("INSERT OR IGNORE INTO %1 (name) VALUES (:name)").arg(DB_LEAGUES_TABLE(countryInfo.fileName())));
+            query.prepare(QString("INSERT OR IGNORE INTO \"%1\" (name) VALUES (:name)").arg(DB_LEAGUES_TABLE(countryInfo.fileName())));
             query.bindValue(":name", fileInfo.fileName());
             query.exec();
         }
@@ -171,33 +177,6 @@ void ConfigWorker::changeCmdState(QString cmd_name, bool isChecked) {
     query.exec();
 }
 
-void ConfigWorker::saveAnalizeResult(ResAnalize res) {
-    QSqlQuery query(sdb);
-    QString request = "DROP TABLE if exists \"%1\"";
-    query.exec(request.arg("Criterion" + QString(res.criterion)));
-    request = "CREATE TABLE if not exists \"%1\" (id INTEGER NOT NULL, name VARCHAR(256) NOT NULL)";
-    query.exec(request.arg("Criterion" + QString(res.criterion)));
-    request = "INSERT INTO \"%1\" (id, name) VALUES(%2, \"%3\")";
-    for (int i = 0; i < res.cmds.size(); ++i)
-        query.exec(request
-                   .arg(DB_TABLE_RESULTS(res.criterion))
-                   .arg(res.cmds[i].id)
-                   .arg(res.cmds[i].name));
-}
-
-ResAnalize ConfigWorker::loadAnalizeResult(Criterions criterion) {
-    ResAnalize res;
-    res.criterion = criterion;
-    QString req = "SELECT * FROM \"%1\"";
-    QSqlQuery query(req.arg(DB_TABLE_RESULTS(criterion)));
-    while(query.next()) {
-        Command cmd = {query.value(1).toInt(), query.value(2).toString()};
-        res.cmds.push_back(cmd);
-    }
-
-    return res;
-}
-
 QStringList ConfigWorker::getContries() {
     QStringList res;
 
@@ -235,6 +214,127 @@ QVector<CMDState> ConfigWorker::useLiga(QString liga) {
         cmds.checked = query.value(2).toBool();
         res.push_back(cmds);
     }
+
+    return res;
+}
+
+void ConfigWorker::changeLigaState(QString country, QString league, bool state) {
+    QSqlQuery query(sdb);
+    int res = query.exec("UPDATE \"" + DB_CMDS_TABLE(country, league) + "\" SET checked = " + (state ? "1": "0"));
+    qDebug() << "RES = " << res;
+}
+
+void ConfigWorker::changeAllCmdsState(bool state) {
+
+}
+
+int ConfigWorker::saveAnalizeResults(QList<ResAnalize> vled) {
+    if (vled.size() == 0)
+        return 1;
+
+    sdb.close();
+    QDateTime dt = QDateTime::currentDateTime();
+    QString string_dt = dt.toString("dd_MM_yyyy_hh_mm_ss");
+    string_dt = ANALIZE_RESULT_DIR "/" + string_dt + "." ANALIZE_RESULT_FILE_FORMAT;
+
+    int res = 1;
+    qDebug() << "FILEPAHT = " << string_dt;
+
+    sdb.setDatabaseName(string_dt);
+    if (!sdb.open())
+           return 0;
+    qDebug() << "CreateFile";
+    QSqlQuery query(sdb);
+    QString request = "CREATE TABLE if not exists \"AnalizeResults\" (id INTEGER PRIMARY KEY AUTOINCREMENT, "
+                                                                      "lid INTEGER NOT NULL, "
+                                                                      "Criterion INTEGAR NOT NULL,"
+                                                                      "CmdName VARCHAR(256) NOT NULL, "
+                                                                      "League VARCHAR(256) NOT NULL, "
+                                                                      "Country VARCHAR(256) NOT NULL, "
+                                                                      "Percent INTEGER NOT NULL)";
+
+    res = query.exec(request);
+    qDebug() << "CreateTable";
+    request = "INSERT INTO \"AnalizeResults\" (lid, Criterion, CmdName, League, Country, Percent) VALUES (?, ?, ?, ?, ?, ?)";
+    query.prepare(request);
+
+    QVariantList lid;
+    QVariantList crts;
+    QVariantList commands;
+    QVariantList leagues;
+    QVariantList countries;
+    QVariantList percents;
+
+    for (int i = 0; i < vled.size(); ++i) {
+        for (int j = 0; j < vled[i].lled.size(); ++j) {
+            lid << vled[i].lled[j].id;
+            crts << vled[i].crt;
+            commands << vled[i].lled[j].command;
+            leagues << vled[i].lled[j].league;
+            countries << vled[i].lled[j].country;
+            percents << vled[i].lled[j].percent;
+        }
+    }
+    qDebug() << "FINISH 1";
+
+    query.addBindValue(lid);
+    query.addBindValue(crts);
+    query.addBindValue(commands);
+    query.addBindValue(leagues);
+    query.addBindValue(countries);
+    query.addBindValue(percents);
+
+    //request[request.size() - 1] = ';';
+    qDebug() << "FINISH 2";
+    //res = query.exec(request);
+    if (!query.execBatch())
+        qDebug() << query.lastError();
+    qDebug() << "FINISH 3";
+    sdb.close();
+    qDebug() << "FINISH 4";
+    openDB();
+    qDebug() << "FINISH 5";
+
+    return res;
+}
+
+QList<ResAnalize> ConfigWorker::loadAnalizeResults(QString path) {
+    sdb.close();
+
+    QList<ResAnalize> res;
+    ResAnalize resa;
+
+    sdb.setDatabaseName(path);
+    if (!sdb.open())
+           return res;
+
+    QSqlQuery query("SELECT * FROM \"AnalizeResults\"");
+
+    Criterions criterion;
+    while(query.next()) {
+        listElemetData led;
+        led.id = query.value(1).toInt();
+        criterion = intToCrt(query.value(2).toInt());
+        led.command = query.value(3).toString();
+        led.league = query.value(4).toString();
+        led.country = query.value(5).toString();
+        led.percent = query.value(6).toInt();
+
+        if (resa.lled.size() == 0)
+            resa.crt = criterion;
+        if (resa.crt != criterion) {
+            res.push_back(resa);
+            resa.lled.clear();
+            resa.crt = criterion;
+        }
+
+        resa.lled.push_back(led);
+
+    }
+
+    res.push_back(resa);
+    sdb.close();
+    openDB();
 
     return res;
 }

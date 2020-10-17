@@ -23,8 +23,10 @@ signals:
     void startAnalize(QVector<Criterions> vcrts);
     void showGenTableWindow();
     void showSettingsWindow();
+    void showSavedResults(QList<ResAnalize>);
 public slots:
     void init();
+    void clickLoadOldResults();
 private:
     Ui::MainWindow *ui;
     int checkedCmdCount;
@@ -35,5 +37,6 @@ private slots:
     void changeStateCBoxCmd(QModelIndex index);
     void clickedAnalize();
     void chooseAllCBoxCmd();
+    void uncheckAll();
 };
 #endif // MAINWINDOW_H

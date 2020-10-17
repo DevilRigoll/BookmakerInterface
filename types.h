@@ -4,6 +4,7 @@
 #include <QString>
 #include <QVector>
 #include <QDateTime>
+#include <QList>
 
 struct Command {
       int id;
@@ -57,16 +58,17 @@ enum Criterions {
     GOAL_IN_3_TIMES = 3
 };
 
+typedef
+struct ResAnalize {
+    Criterions crt;
+    QList<listElemetData> lled;
+} ResAnalize;
+
 enum ProccesThreadState {
     STARTING,
     WAITING,
     WORKING,
     FINISH
-};
-
-struct ResAnalize {
-    Criterions criterion;
-    QVector<Command> cmds;
 };
 
 struct CMDState {

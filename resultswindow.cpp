@@ -2,6 +2,7 @@
 #include "ui_resultswindow.h"
 
 #include "threadanalizeprocess.h"
+#include "listelem.h"
 
 #include <QDebug>
 
@@ -16,6 +17,8 @@ ResultsWindow::ResultsWindow(ConfigWorker * cfg, QWidget *parent) :
     main_layout = nullptr;
 
     connect(ui->percentSpin, SIGNAL(valueChanged(int)), this, SLOT(showCurrentSet(int)));
+    connect(ui->SearchLineEdit, SIGNAL(textChanged(const QString &)), this, SLOT(showSearchResults(const QString)));
+    connect(ui->SaveResultsBtn, SIGNAL(clicked()), this, SLOT(safeResults()));
 }
 
 ResultsWindow::~ResultsWindow() {
@@ -73,7 +76,7 @@ void ResultsWindow::runAnalize(QVector<Criterions> vcrt) {
 void ResultsWindow::startAnalize(QVector<Criterions> vcrt) {
     this->show();
     qDebug() << "start analize";
-
+    m_vcrt = vcrt;
     runAnalize(vcrt);
 }
 
@@ -84,4 +87,52 @@ void ResultsWindow::showCurrentSet(int value) {
         clf->showCurrentSet(value);
         i++;
     }
+}
+
+void ResultsWindow::showSearchResults(const QString str) {
+
+}
+
+void ResultsWindow::safeResults() {
+
+    QList<ResAnalize> lresa;
+    for (int i = 0; i < main_layout->count(); ++i) {
+        ListForm * clf = (ListForm *)main_layout->itemAt(i)->widget();
+        ResAnalize resa;
+        resa.crt = clf->getCriterion();
+        QVBoxLayout * l = clf->getMainLayout();
+
+        for (int j = 0; j < l->count(); ++j) {
+            ListElem * le = (ListElem *)l->itemAt(j)->widget();
+            resa.lled.push_back(le->getData());
+        }
+        lresa.push_back(resa);
+    }
+
+    cfg->saveAnalizeResults(lresa);
+}
+
+void ResultsWindow::sshowSavedResults(QList<ResAnalize> lra) {
+    if (scroll_widget != nullptr) {
+        delete scroll_widget;
+        scroll_widget = nullptr;
+    }
+
+    scroll_widget = new QWidget(ui->scrollArea);
+    main_layout = new QHBoxLayout(scroll_widget);
+    main_layout->setAlignment(Qt::AlignLeft);
+    scroll_widget->setLayout(main_layout);
+    ui->scrollArea->setWidget(scroll_widget);
+
+    this->show();
+
+    for (int i = 0; i < lra.size(); ++i) {
+        ListForm * lf = new ListForm(lra[i].crt, scroll_widget);
+        lf->changeStateLable(FINISH);
+        main_layout->addWidget(lf);
+        for (int j = 0; j < lra[i].lled.size(); ++j) {
+            lf->addElem(lra[i].lled[j]);
+        }
+    }
+
 }

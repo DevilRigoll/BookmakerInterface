@@ -7,7 +7,9 @@
 #include <QDebug>
 #include <QVector>
 #include <QString>
+#include <QFileDialog>
 #include "tableworker.h"
+#include "utils.h"
 
 MainWindow::MainWindow(ConfigWorker * cfg, QWidget * parent)
     : QMainWindow(parent)
@@ -23,6 +25,8 @@ MainWindow::MainWindow(ConfigWorker * cfg, QWidget * parent)
     connect(ui->genTableBtn, SIGNAL(clicked()), this, SIGNAL(showGenTableWindow()));
     connect(ui->menuSettings, SIGNAL(aboutToShow()), this, SIGNAL(showSettingsWindow()));
     connect(ui->chooseAllCBox, SIGNAL(stateChanged(int)), this, SLOT(chooseAllCBoxCmd()));
+    connect(ui->LoadOldResultBtn, SIGNAL(clicked()), this, SLOT(clickLoadOldResults()));
+    connect(ui->UncheckAllBtn, SIGNAL(clicked()), this, SLOT(uncheckAll()));
 
     ui->goalsAnalizeCBox->setCheckState(Qt::Checked);
 
@@ -102,6 +106,17 @@ void MainWindow::chooseAllCBoxCmd() {
     for (int i = 0; i < ui->cmdList->count(); ++i) {
         QListWidgetItem * lwi = ui->cmdList->item(i);
         lwi->setCheckState(ui->chooseAllCBox->checkState() ? Qt::Checked : Qt::Unchecked);
-        cfgWorker->changeCmdState(lwi->text(), lwi->checkState());
     }
+
+    cfgWorker->changeLigaState(ui->countryList->currentText(), ui->leaguesList->currentText(), ui->chooseAllCBox->checkState() ? 1 : 0);
+}
+
+void MainWindow::clickLoadOldResults() {
+    QString path = QFileDialog::getOpenFileName(0,QObject::tr("Укажите файл базы данных"),ANALIZE_RESULT_DIR, QObject::tr("Файл SQLite (*." ANALIZE_RESULT_FILE_FORMAT ")"));
+    QList<ResAnalize> res = cfgWorker->loadAnalizeResults(path);
+    emit showSavedResults(res);
+}
+
+void MainWindow::uncheckAll() {
+
 }

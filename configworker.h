@@ -21,20 +21,28 @@ public:
     ConfigWorker();
     ~ConfigWorker();
     void setData(QString, QString, QVector<Command>);
-    void saveAnalizeResult(ResAnalize);
-    ResAnalize loadAnalizeResult(Criterions);
+
     QStringList useCountry(QString);
     QVector<CMDState> useLiga(QString);
-    void changeCmdState(QString, bool);
+
+    int openDB();
     void fillDB();
+
     QStringList getContries();
     QString getXlsxPath() const;
     QString getDBPath() const;
     void setXlsxPath(QString);
     void setDBPath(QString);
+
     int setConfigFile();
     void saveConfigFile();
-    int openDB();
+
+    void changeCmdState(QString, bool);
+    void changeAllCmdsState(bool);
+    void changeLigaState(QString country, QString league, bool state);
+
+    int saveAnalizeResults(QList<ResAnalize> vled);
+    QList<ResAnalize> loadAnalizeResults(QString path);
 private:
     void initDatabase();
 

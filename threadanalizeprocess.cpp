@@ -190,35 +190,35 @@ float ThreadAnalizeProcess::getPercent(LDAWorker ldaw, int curr_no_v) {
 
 void ThreadAnalizeProcess::run() {
     TableWorker tw;
-    //qDebug() << "TAP 1";
+    qDebug() << "TAP 1";
     //m_w->changeStateLable(ProccesThreadState::WORKING);
-    //qDebug() << "TAP 2";
+    qDebug() << "TAP 2";
     QStringList countries = m_cfg->getContries();
-    //qDebug() << "TAP 2";
+    qDebug() << "TAP 2";
     for (int i = 0; i < countries.size(); ++i) {
         QStringList leagues = m_cfg->useCountry(countries[i]);
-        //qDebug() << "TAP 3";
+        qDebug() << "TAP 3";
         for (int j = 0; j < leagues.size(); ++j) {
             QVector<CMDState> cmds = m_cfg->useLiga(leagues[j]);
             for (int k = 0 ; k < cmds.size(); ++k) {
                 if (cmds[k].checked) {
                     QString path = m_cfg->getXlsxPath() + "/" + countries[i] + "/" + leagues[j];
-                    //qDebug() << "TAP 4";
+                    qDebug() << "TAP 4";
                     tw.open(path);
                     QList<DataAnalize> LDA = tw.genLDA(cmds[k].cmd);
                     tw.closeXlsx();
                     LDAWorker ldaw(LDA);
-                    //qDebug() << "TAP 5";
+                    qDebug() << "TAP 5";
                     int noGoals = ldaw.getLastCountNoGoals(criterionToMatchPeriod(m_crt));
-                    //qDebug() << countries[i] << " " << leagues[j] << " " << cmds[k].cmd.name;
+                    qDebug() << countries[i] << " " << leagues[j] << " " << cmds[k].cmd.name;
                     float _percent = getPercent(ldaw, noGoals);
-                    //qDebug() << "end";
+                    qDebug() << "end";
                     listElemetData led = {cmds[k].cmd.id, countries[i], leagues[j], cmds[k].cmd.name, static_cast<int>(_percent), 0, 0};
-                    //qDebug() << "TAP 6";
+                    qDebug() << "TAP 6";
                     analizeMutex.lock();
                     m_w->addElem(led);
                     analizeMutex.unlock();
-                    //qDebug() << "TAP 7";
+                    qDebug() << "TAP 7";
                 }
             }
 

@@ -3,12 +3,15 @@
 
 #include "utils.h"
 #include "tableworker.h"
+#include <QString>
 #include <QDebug>
 #include <QAxObject>
+#include <string.h>
 
 ListForm::ListForm(Criterions crt, QWidget * parent)
     : QWidget(parent),
-    ui(new Ui::ResElemForm)
+    ui(new Ui::ResElemForm),
+    crt(crt)
 {
     ui->setupUi(this);
     //ui->CmdsList->setLayout(main_layout);
@@ -29,6 +32,14 @@ void ListForm::setDataPth(QString path) {
     this->path = path;
 }
 
+Criterions ListForm::getCriterion() const {
+    return crt;
+}
+
+QVBoxLayout * ListForm::getMainLayout() const {
+    return main_layout;
+}
+
 void ListForm::changeStateLable(ProccesThreadState ptc) {
     ui->ProccesState->setText(stringProcessState(ptc));
 }
@@ -40,7 +51,8 @@ void ListForm::addElem(listElemetData led) {
     int i = 0;
     while (i < main_layout->count()) {
         ListElem * cle = (ListElem *)main_layout->itemAt(i)->widget();
-        if (cle->getPercent() < led.percent)
+        if ((cle->getPercent() == led.percent && QString::compare(cle->getCmdName(), led.command, Qt::CaseInsensitive) > 0)
+        || (cle->getPercent() < led.percent))
             break;
         i++;
     }
@@ -62,6 +74,20 @@ void ListForm::showCurrentSet(int percent) {
             cle->setVisible(false);
         else
             cle->setVisible(true);
+        i++;
+    }
+
+    main_layout->update();
+}
+
+void ListForm::showCurrentSet(QString value) {
+    int i = 0;
+    while (i < main_layout->count()) {
+        ListElem * cle = (ListElem *)main_layout->itemAt(i)->widget();
+        if (!strncmp(cle->getCmdName().toStdString().c_str(), value.toStdString().c_str(), value.size()))
+            cle->setVisible(true);
+        else
+            cle->setVisible(false);
         i++;
     }
 

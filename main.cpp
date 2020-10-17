@@ -10,7 +10,7 @@
 #include <QDebug>
 
 #include <QtPlugin>
-Q_IMPORT_PLUGIN(QWindowsIntegrationPlugin)
+//Q_IMPORT_PLUGIN(QWindowsIntegrationPlugin)
 
 int main(int argc, char *argv[]) {
 
@@ -37,6 +37,7 @@ int main(int argc, char *argv[]) {
 
     w.show();
     QObject::connect(&w, SIGNAL(startAnalize(QVector<Criterions>)), &rw, SLOT(startAnalize(QVector<Criterions>)));
+    QObject::connect(&w, SIGNAL(showSavedResults(QList<ResAnalize>)), &rw, SLOT(sshowSavedResults(QList<ResAnalize>)));
     //QObject::connect(&rw, SIGNAL(destroyed(QObject *)), &w, SLOT(enablePercentEdit(QObject*)));
     QObject::connect(&w, SIGNAL(showGenTableWindow()), &gtw, SLOT(show()));
     QObject::connect(&w, SIGNAL(showSettingsWindow()), &sw, SLOT(show()));

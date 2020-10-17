@@ -21,11 +21,15 @@ public:
     void changeStateLable(ProccesThreadState ptc);
     void setDataPth(QString path);
     void showCurrentSet(int percent);
+    void showCurrentSet(QString percent);
+    Criterions getCriterion() const;
+    QVBoxLayout * getMainLayout() const;
 private:
     Ui::ResElemForm * ui;
     QVBoxLayout * main_layout;
     QWidget * scroll_w;
     QString path;
+    Criterions crt;
 signals:
 
 private slots:

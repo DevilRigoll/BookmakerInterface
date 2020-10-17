@@ -27,12 +27,16 @@ private:
     QThreadPool * tp;
     QHBoxLayout * main_layout;
     QWidget * scroll_widget;
+    QVector<Criterions> m_vcrt;
     void addCWThread(Criterions criterion);
     void runAnalize(QVector<Criterions> vcrt);
 public slots:
     void startAnalize(QVector<Criterions> vcrt);
+    void sshowSavedResults(QList<ResAnalize>);
 private slots:
     void showCurrentSet(int value);
+    void showSearchResults(const QString str);
+    void safeResults();
     //void elementClicked();
 };
 

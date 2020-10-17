@@ -18,6 +18,8 @@ public:
     ~ListElem() override;
 
     int getPercent() const;
+    QString getCmdName() const;
+    listElemetData getData() const;
 private:
     void createActions();
     QAction * moreInfoAct;

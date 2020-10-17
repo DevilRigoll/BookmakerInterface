@@ -6,8 +6,8 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>390</width>
-    <height>336</height>
+    <width>561</width>
+    <height>346</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -17,8 +17,8 @@
    <widget class="QPushButton" name="genTableBtn">
     <property name="geometry">
      <rect>
-      <x>300</x>
-      <y>270</y>
+      <x>440</x>
+      <y>280</y>
       <width>81</width>
       <height>23</height>
      </rect>
@@ -30,9 +30,9 @@
    <widget class="QPushButton" name="AnalizeBtn">
     <property name="geometry">
      <rect>
-      <x>210</x>
-      <y>270</y>
-      <width>61</width>
+      <x>320</x>
+      <y>280</y>
+      <width>71</width>
       <height>23</height>
      </rect>
     </property>
@@ -45,7 +45,7 @@
      <rect>
       <x>10</x>
       <y>30</y>
-      <width>161</width>
+      <width>271</width>
       <height>22</height>
      </rect>
     </property>
@@ -55,7 +55,7 @@
      <rect>
       <x>10</x>
       <y>80</y>
-      <width>161</width>
+      <width>271</width>
       <height>22</height>
      </rect>
     </property>
@@ -63,9 +63,9 @@
    <widget class="QListWidget" name="cmdList">
     <property name="geometry">
      <rect>
-      <x>210</x>
+      <x>320</x>
       <y>30</y>
-      <width>171</width>
+      <width>211</width>
       <height>211</height>
      </rect>
     </property>
@@ -148,14 +148,40 @@
    <widget class="QCheckBox" name="chooseAllCBox">
     <property name="geometry">
      <rect>
-      <x>210</x>
-      <y>240</y>
-      <width>161</width>
+      <x>320</x>
+      <y>250</y>
+      <width>71</width>
       <height>17</height>
      </rect>
     </property>
     <property name="text">
      <string>Choose all</string>
+    </property>
+   </widget>
+   <widget class="QPushButton" name="LoadOldResultBtn">
+    <property name="geometry">
+     <rect>
+      <x>10</x>
+      <y>280</y>
+      <width>91</width>
+      <height>23</height>
+     </rect>
+    </property>
+    <property name="text">
+     <string>load old results</string>
+    </property>
+   </widget>
+   <widget class="QPushButton" name="UncheckAllBtn">
+    <property name="geometry">
+     <rect>
+      <x>440</x>
+      <y>250</y>
+      <width>81</width>
+      <height>21</height>
+     </rect>
+    </property>
+    <property name="text">
+     <string>Uncheck all</string>
     </property>
    </widget>
   </widget>
@@ -164,7 +190,7 @@
     <rect>
      <x>0</x>
      <y>0</y>
-     <width>390</width>
+     <width>561</width>
      <height>21</height>
     </rect>
    </property>
