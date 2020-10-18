@@ -65,7 +65,7 @@ void MainWindow::changeCountryList(int index) {
     ui->leaguesList->setEnabled(true);
     ui->leaguesList->clear();
     ui->leaguesList->addItem(" ");
-    ui->leaguesList->addItems(cfgWorker->useCountry(ui->countryList->currentText()));
+    ui->leaguesList->addItems(cfgWorker->getLeagues(ui->countryList->currentText()));
 }
 
 void MainWindow::changeLeaguesList(int index) {
@@ -79,7 +79,7 @@ void MainWindow::changeLeaguesList(int index) {
     ui->AnalizeBtn->setEnabled(true);
 
     QListWidgetItem * lwi = nullptr;
-    QVector<CMDState> cmds = cfgWorker->useLiga(ui->leaguesList->currentText());
+    QVector<CMDState> cmds = cfgWorker->getCmds(ui->countryList->currentText(), ui->leaguesList->currentText());
     int flag = 0;
     foreach (CMDState cmd, cmds) {
         lwi = new QListWidgetItem(cmd.cmd.name, ui->cmdList);
@@ -99,7 +99,7 @@ void MainWindow::changeLeaguesList(int index) {
 void MainWindow::changeStateCBoxCmd(QModelIndex index) {
     QListWidgetItem * lwi = ui->cmdList->item(index.row());
     lwi->setCheckState(lwi->checkState() ? Qt::Unchecked : Qt::Checked);
-    cfgWorker->changeCmdState(lwi->text(), lwi->checkState());
+    cfgWorker->changeCmdState(ui->countryList->currentText(), ui->leaguesList->currentText(), lwi->text(), lwi->checkState());
 }
 
 void MainWindow::chooseAllCBoxCmd() {
@@ -118,5 +118,11 @@ void MainWindow::clickLoadOldResults() {
 }
 
 void MainWindow::uncheckAll() {
+    for (int i = 0; i < ui->cmdList->count(); ++i) {
+        QListWidgetItem * lwi = ui->cmdList->item(i);
+        lwi->setCheckState(Qt::Unchecked);
+    }
+    ui->chooseAllCBox->setCheckState(Qt::Unchecked);
+    cfgWorker->changeAllCmdsState(0);
 
 }

@@ -196,10 +196,10 @@ void ThreadAnalizeProcess::run() {
     QStringList countries = m_cfg->getContries();
     qDebug() << "TAP 2";
     for (int i = 0; i < countries.size(); ++i) {
-        QStringList leagues = m_cfg->useCountry(countries[i]);
+        QStringList leagues = m_cfg->getLeagues(countries[i]);
         qDebug() << "TAP 3";
         for (int j = 0; j < leagues.size(); ++j) {
-            QVector<CMDState> cmds = m_cfg->useLiga(leagues[j]);
+            QVector<CMDState> cmds = m_cfg->getCmds(countries[i], leagues[j]);
             for (int k = 0 ; k < cmds.size(); ++k) {
                 if (cmds[k].checked) {
                     QString path = m_cfg->getXlsxPath() + "/" + countries[i] + "/" + leagues[j];

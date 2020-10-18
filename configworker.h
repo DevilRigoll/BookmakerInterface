@@ -22,8 +22,8 @@ public:
     ~ConfigWorker();
     void setData(QString, QString, QVector<Command>);
 
-    QStringList useCountry(QString);
-    QVector<CMDState> useLiga(QString);
+    QStringList getLeagues(QString);
+    QVector<CMDState> getCmds(QString, QString);
 
     int openDB();
     void fillDB();
@@ -37,7 +37,7 @@ public:
     int setConfigFile();
     void saveConfigFile();
 
-    void changeCmdState(QString, bool);
+    void changeCmdState(QString, QString, QString, bool);
     void changeAllCmdsState(bool);
     void changeLigaState(QString country, QString league, bool state);
 

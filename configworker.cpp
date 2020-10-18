@@ -12,6 +12,7 @@
     #define _CRT_SECURE_NO_WARNINGS
 #endif
 
+#define MAX_COUNT_CMD_IN_TABLE 1000
 
 ConfigWorker::ConfigWorker() {
     sdb = QSqlDatabase::addDatabase("QSQLITE");
@@ -87,7 +88,17 @@ void ConfigWorker::saveConfigFile() {
 }
 
 void ConfigWorker::initDatabase() {
+    if (db_path.size() == 0)
+        exit(0);
+
+    QDir dir(db_path);
+    if (dir.exists())
+        dir.remove(db_path);
+
+    openDB();
+
     QSqlQuery query(sdb);
+    /*
     query.exec("CREATE TABLE if not exists Countries (id INTEGER PRIMARY KEY AUTOINCREMENT, name VARCHAR(256) NOT NULL UNIQUE)");
 
     QDir * main_dir = new QDir(xlsx_path);
@@ -127,26 +138,65 @@ void ConfigWorker::initDatabase() {
     }
 
     delete main_dir;
+    */
+
+    query.exec("CREATE TABLE if not exists Countries (id INTEGER PRIMARY KEY AUTOINCREMENT,"
+                                                      "name VARCHAR(256) NOT NULL UNIQUE)");
+
+    query.exec("CREATE TABLE if not exists CmdTable (id INTEGER PRIMARY KEY AUTOINCREMENT, "
+                                                      "cid INTEGER NOT NULL, "
+                                                      "cmd VARCHAR(256) NOT NULL,"
+                                                      "league VARCHAR(256) NOT NULL, "
+                                                      "country VARCHAR(256) NOT NULL, "
+                                                      "checked INTEGER NOT NULL)");
 }
 
-void ConfigWorker::setData(QString country, QString liga, QVector<Command> cmds) {
+void ConfigWorker::setData(QString country, QString league, QVector<Command> cmds) {
     QSqlQuery query(sdb);
-    QString request = "CREATE TABLE if not exists \"%1\" (id INTEGER NOT NULL, name VARCHAR(256) NOT NULL UNIQUE, checked INTEGER NOT NULL)";
-    query.exec(request.arg(DB_CMDS_TABLE(country, liga)));
+    QString request;// = "CREATE TABLE if not exists \"%1\" (id INTEGER NOT NULL, name VARCHAR(256) NOT NULL UNIQUE, checked INTEGER NOT NULL)";
+    //query.exec(request.arg(DB_CMDS_TABLE(country, liga)));
 
-    request = "INSERT OR IGNORE INTO \"%1\" (id, name, checked) VALUES(:id, :name, :checked)";
+    //request = "INSERT OR IGNORE INTO \"%1\" (id, name, checked) VALUES(:id, :name, :checked)";
+    request = "INSERT OR IGNORE INTO CmdTable (cid, cmd, league, country, checked) VALUES(?, ?, ?, ?, ?)";
+    /*
     for (int i = 0; i < cmds.size(); ++i) {
         query.prepare(request.arg(DB_CMDS_TABLE(country, liga)));
-        query.bindValue(":id", cmds[i].id);
-        query.bindValue(":name", cmds[i].name);
+        query.bindValue(":cid", cmds[i].id);
+        query.bindValue(":cmd", cmds[i].name);
         query.bindValue(":checked", 0);
         query.exec();
     }
+    */
+
+    query.prepare(request);
+
+    QVariantList cids;
+    QVariantList commands;
+    QVariantList leagues;
+    QVariantList countries;
+    QVariantList checkeds;
+
+    for (int i = 0; i < cmds.size(); ++i) {
+          cids << cmds[i].id;
+          commands << cmds[i].name;
+          leagues << league;
+          countries << country;
+          checkeds << 0;
+    }
+
+    query.addBindValue(cids);
+    query.addBindValue(commands);
+    query.addBindValue(leagues);
+    query.addBindValue(countries);
+    query.addBindValue(checkeds);
+
+    if (!query.execBatch())
+        qDebug() << query.lastError();
 }
 
 void ConfigWorker::fillDB() {
     initDatabase();
-
+    /*
     qDebug() << "initDB";
 
     TableWorker * tw = new TableWorker();
@@ -165,16 +215,122 @@ void ConfigWorker::fillDB() {
     qDebug() << "initDB 2";
 
     delete tw;
+    */
+
+    TableWorker * tw = new TableWorker();
+    QSqlQuery query(sdb);
+    QString request = "INSERT OR IGNORE INTO CmdTable (cid, cmd, league, country, checked) VALUES(?, ?, ?, ?, ?)";
+
+    query.prepare(request);
+
+    QVariantList cids;
+    QVariantList commands;
+    QVariantList leagues;
+    QVariantList countries;
+    QVariantList checkeds;
+
+    QVariantList countries_table;
+
+    int count = 0;
+    QDir * main_dir = new QDir(xlsx_path);
+    main_dir->setFilter(QDir::Dirs | QDir::NoDotAndDotDot);
+
+    QStringList filters = {"*.xlsx"};
+
+    QFileInfoList list = main_dir->entryInfoList();
+
+
+    for (int i = 0; i < list.size(); ++i) {
+        QFileInfo countryInfo = list[i];
+        QDir * dir = new QDir(xlsx_path + "/" + countryInfo.fileName() + '/');
+        dir->setFilter(QDir::Files | QDir::NoDotDot);
+        dir->setNameFilters(filters);
+        countries_table << countryInfo.fileName();
+        QFileInfoList list_f = dir->entryInfoList();
+        QVariantList leagues_table;
+        query.exec(QString("CREATE TABLE if not exists \"%1\" (id INTEGER PRIMARY KEY AUTOINCREMENT, name VARCHAR(256) NOT NULL UNIQUE)")
+                   .arg(DB_LEAGUES_TABLE(countryInfo.fileName())));
+
+        for (int j = 0; j < list_f.size(); ++j) {
+            QFileInfo leaguesInfo = list_f[j];
+            leagues_table << leaguesInfo.fileName();
+
+            tw->open(xlsx_path + "/" + countryInfo.fileName() + '/' + leaguesInfo.fileName());
+            QVector<Command> cmds = tw->getCommands();
+            tw->closeXlsx();
+
+            if (count < MAX_COUNT_CMD_IN_TABLE) {
+               for (int k = 0; k < cmds.size(); ++k) {
+                   cids << cmds[k].id;
+                   commands << cmds[k].name;
+                   leagues << leaguesInfo.fileName();
+                   countries << countryInfo.fileName();
+                   checkeds << 0;
+               }
+               count += cmds.size();
+            }
+            else {
+                count = 0;
+                j--;
+
+                query.prepare("INSERT OR IGNORE INTO CmdTable (cid, cmd, league, country, checked) VALUES(?, ?, ?, ?, ?)");
+                query.addBindValue(cids);
+                query.addBindValue(commands);
+                query.addBindValue(leagues);
+                query.addBindValue(countries);
+                query.addBindValue(checkeds);
+
+                if (!query.execBatch())
+                    qDebug() << query.lastError();
+
+                cids.clear();
+                commands.clear();
+                leagues.clear();
+                countries.clear();
+                checkeds.clear();
+            }
+        }
+
+        delete dir;
+        query.prepare(QString("INSERT OR IGNORE INTO \"%1\" (name) VALUES(?)")
+                      .arg(DB_LEAGUES_TABLE(countryInfo.fileName())));
+        query.addBindValue(leagues_table);
+        if (!query.execBatch())
+            qDebug() << query.lastError();
+    }
+
+    if (cids.size() != 0) {
+        query.prepare("INSERT OR IGNORE INTO CmdTable (cid, cmd, league, country, checked) VALUES(?, ?, ?, ?, ?)");
+        query.addBindValue(cids);
+        query.addBindValue(commands);
+        query.addBindValue(leagues);
+        query.addBindValue(countries);
+        query.addBindValue(checkeds);
+    }
+
+    if (!query.execBatch())
+        qDebug() << query.lastError();
+
+    int res = query.prepare("INSERT OR IGNORE INTO Countries (name) VALUES(?)");
+    query.addBindValue(countries_table);
+    if (!query.execBatch())
+        qDebug() << query.lastError() << res;
+
+    delete main_dir;
+
 }
 
-void ConfigWorker::changeCmdState(QString cmd_name, bool isChecked) {
+void ConfigWorker::changeCmdState(QString country, QString league, QString cmd_name, bool isChecked) {
     QSqlQuery query(sdb);
-    QString request = "UPDATE \"%1\" SET checked = :checked WHERE name = :name";
-    query.prepare(request.arg(DB_CMDS_TABLE(country_use, liga_use)));
-    query.bindValue(":name", cmd_name);
+    QString request = "UPDATE CmdTable SET checked = :checked WHERE cmd = :cmd AND country = :country AND league = :league";
+    query.prepare(request);
+    query.bindValue(":cmd", cmd_name);
+    query.bindValue(":country", country);
+    query.bindValue(":league", league);
     query.bindValue(":checked", isChecked);
 
-    query.exec();
+    int res = query.exec();
+    qDebug() << "changeCmdStates = " << res;
 }
 
 QStringList ConfigWorker::getContries() {
@@ -188,8 +344,8 @@ QStringList ConfigWorker::getContries() {
     return res;
 }
 
-QStringList ConfigWorker::useCountry(QString country) {
-    country_use = country;
+QStringList ConfigWorker::getLeagues(QString country) {
+    //country_use = country;
     QStringList res;
     QSqlQuery query(sdb);
     query.exec("SELECT * FROM \"" + DB_LEAGUES_TABLE(country) + "\"");
@@ -200,18 +356,24 @@ QStringList ConfigWorker::useCountry(QString country) {
     return res;
 }
 
-QVector<CMDState> ConfigWorker::useLiga(QString liga) {
-    liga_use = liga;
+QVector<CMDState> ConfigWorker::getCmds(QString country, QString league) {
+   // liga_use = liga;
 
     QVector<CMDState> res;
 
-    QSqlQuery query("SELECT * FROM \"" + DB_CMDS_TABLE(country_use, liga) + "\"");
+    QSqlQuery query(sdb);
+    int res1 = query.exec(QString("SELECT * FROM CmdTable WHERE country = \"%1\" AND league = \"%2\"").arg(country).arg(league));
+
+    qDebug() << "getCmds res = " << res1;
+
+    qDebug() << country << " " << league;
 
     while(query.next()) {
         CMDState cmds;
-        cmds.cmd.id = query.value(0).toInt();
-        cmds.cmd.name = query.value(1).toString();
-        cmds.checked = query.value(2).toBool();
+        cmds.cmd.id = query.value(1).toInt();
+        cmds.cmd.name = query.value(2).toString();
+        cmds.checked = query.value(5).toBool();
+        qDebug() << cmds.cmd.id << " " << cmds.cmd.name << " " << cmds.checked;
         res.push_back(cmds);
     }
 
@@ -220,12 +382,15 @@ QVector<CMDState> ConfigWorker::useLiga(QString liga) {
 
 void ConfigWorker::changeLigaState(QString country, QString league, bool state) {
     QSqlQuery query(sdb);
-    int res = query.exec("UPDATE \"" + DB_CMDS_TABLE(country, league) + "\" SET checked = " + (state ? "1": "0"));
-    qDebug() << "RES = " << res;
+    int res = query.exec(QString("UPDATE CmdTable SET checked = ") + (state ? "1 ": "0 ") + QString("WHERE country = \"%1\" AND league = \"%2\"").arg(country).arg(league));
+    qDebug() << "changeLigaState = " << res;
+    qDebug() << query.lastError();
 }
 
 void ConfigWorker::changeAllCmdsState(bool state) {
-
+    QSqlQuery query(sdb);
+    int res = query.exec(QString("UPDATE CmdTable SET checked = ") + (state ? "1": "0"));
+    qDebug() << "changeAllCmdsState = " << res;
 }
 
 int ConfigWorker::saveAnalizeResults(QList<ResAnalize> vled) {

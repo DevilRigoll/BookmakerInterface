@@ -52,7 +52,7 @@ void Gen3TableWindow::changeCountryList(int id) {
     ui->LeagueBox->setEnabled(true);
     ui->LeagueBox->clear();
     ui->LeagueBox->addItem(" ");
-    ui->LeagueBox->addItems(m_cfg->useCountry(ui->CountryBox->currentText()));
+    ui->LeagueBox->addItems(m_cfg->getLeagues(ui->CountryBox->currentText()));
 }
 
 void Gen3TableWindow::changeLeaguesList(int id) {
@@ -70,7 +70,7 @@ void Gen3TableWindow::changeLeaguesList(int id) {
     ui->Cmd1Box->setEnabled(true);
     ui->Cmd2Box->setEnabled(true);
 
-    QVector<CMDState> cmds = m_cfg->useLiga(ui->LeagueBox->currentText());
+    QVector<CMDState> cmds = m_cfg->getCmds(ui->CountryBox->currentText(), ui->LeagueBox->currentText());
 
     foreach (CMDState cmd, cmds) {
         ui->Cmd1Box->addItem(cmd.cmd.name);
