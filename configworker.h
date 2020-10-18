@@ -47,8 +47,6 @@ private:
     void initDatabase();
 
     QSqlDatabase sdb;
-    QString country_use;
-    QString liga_use;
     QString db_path;
     QString xlsx_path;
 };

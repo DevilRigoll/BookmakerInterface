@@ -45,14 +45,6 @@ int ConfigWorker::setConfigFile() {
     qDebug() << xlsx_path;
     qDebug() << db_path;
 
-    /*
-    fgets(path, 1023, f);
-    xlsx_path = QString(path);
-    xlsx_path = xlsx_path.remove(xlsx_path.size() - 1, 1);
-    fgets(path, 1023, f);
-    db_path = QString(path);
-    */
-
     fclose(f);
 
     return 0;
@@ -98,47 +90,6 @@ void ConfigWorker::initDatabase() {
     openDB();
 
     QSqlQuery query(sdb);
-    /*
-    query.exec("CREATE TABLE if not exists Countries (id INTEGER PRIMARY KEY AUTOINCREMENT, name VARCHAR(256) NOT NULL UNIQUE)");
-
-    QDir * main_dir = new QDir(xlsx_path);
-
-    main_dir->setFilter(QDir::Dirs | QDir::NoDotAndDotDot);
-
-    QStringList filters = {"*.xlsx"};
-
-    QFileInfoList list = main_dir->entryInfoList();
-
-    for (int i = 0; i < list.size(); ++i) {
-        QFileInfo countryInfo = list[i];
-
-        query.prepare("INSERT OR IGNORE INTO Countries (name) VALUES (:name)");
-        query.bindValue(":name", countryInfo.fileName());
-        query.exec();
-
-        query.exec(QString("CREATE TABLE if not exists \"%1\" (id INTEGER PRIMARY KEY AUTOINCREMENT, name VARCHAR(256) NOT NULL UNIQUE)")
-                      .arg(DB_LEAGUES_TABLE(countryInfo.fileName())));
-
-        QDir * dir = new QDir(xlsx_path + "/" + countryInfo.fileName() + '/');
-
-        dir->setFilter(QDir::Files | QDir::NoDotDot);
-        dir->setNameFilters(filters);
-
-        QFileInfoList list = dir->entryInfoList();
-        for (int i = 0; i < list.size(); ++i) {
-            QFileInfo fileInfo = list[i];
-
-            query.prepare(QString("INSERT OR IGNORE INTO \"%1\" (name) VALUES (:name)").arg(DB_LEAGUES_TABLE(countryInfo.fileName())));
-            query.bindValue(":name", fileInfo.fileName());
-            query.exec();
-        }
-
-        delete dir;
-
-    }
-
-    delete main_dir;
-    */
 
     query.exec("CREATE TABLE if not exists Countries (id INTEGER PRIMARY KEY AUTOINCREMENT,"
                                                       "name VARCHAR(256) NOT NULL UNIQUE)");
@@ -153,20 +104,7 @@ void ConfigWorker::initDatabase() {
 
 void ConfigWorker::setData(QString country, QString league, QVector<Command> cmds) {
     QSqlQuery query(sdb);
-    QString request;// = "CREATE TABLE if not exists \"%1\" (id INTEGER NOT NULL, name VARCHAR(256) NOT NULL UNIQUE, checked INTEGER NOT NULL)";
-    //query.exec(request.arg(DB_CMDS_TABLE(country, liga)));
-
-    //request = "INSERT OR IGNORE INTO \"%1\" (id, name, checked) VALUES(:id, :name, :checked)";
-    request = "INSERT OR IGNORE INTO CmdTable (cid, cmd, league, country, checked) VALUES(?, ?, ?, ?, ?)";
-    /*
-    for (int i = 0; i < cmds.size(); ++i) {
-        query.prepare(request.arg(DB_CMDS_TABLE(country, liga)));
-        query.bindValue(":cid", cmds[i].id);
-        query.bindValue(":cmd", cmds[i].name);
-        query.bindValue(":checked", 0);
-        query.exec();
-    }
-    */
+    QString request = "INSERT OR IGNORE INTO CmdTable (cid, cmd, league, country, checked) VALUES(?, ?, ?, ?, ?)";
 
     query.prepare(request);
 
@@ -345,7 +283,6 @@ QStringList ConfigWorker::getContries() {
 }
 
 QStringList ConfigWorker::getLeagues(QString country) {
-    //country_use = country;
     QStringList res;
     QSqlQuery query(sdb);
     query.exec("SELECT * FROM \"" + DB_LEAGUES_TABLE(country) + "\"");
@@ -357,7 +294,6 @@ QStringList ConfigWorker::getLeagues(QString country) {
 }
 
 QVector<CMDState> ConfigWorker::getCmds(QString country, QString league) {
-   // liga_use = liga;
 
     QVector<CMDState> res;
 
@@ -449,9 +385,7 @@ int ConfigWorker::saveAnalizeResults(QList<ResAnalize> vled) {
     query.addBindValue(countries);
     query.addBindValue(percents);
 
-    //request[request.size() - 1] = ';';
     qDebug() << "FINISH 2";
-    //res = query.exec(request);
     if (!query.execBatch())
         qDebug() << query.lastError();
     qDebug() << "FINISH 3";
